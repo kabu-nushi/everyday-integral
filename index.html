@@ -594,6 +594,8 @@
 
         // 認証状態の監視 & データダウンロード
         onAuthStateChanged(auth, async (user) => {
+            if (!user) return; // 匿名ログイン完了前は処理をスキップ
+
             await loadCloudData();
 
             renderHomeView();
