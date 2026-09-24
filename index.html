@@ -100,7 +100,6 @@
             
             <!-- VIEW 1: HOME -->
             <section id="view-home" class="space-y-5">
-                
                 <!-- Today's Problem Main Card -->
                 <div class="bg-gradient-to-br from-blue-600 via-blue-600 to-indigo-600 rounded-3xl p-5 text-white card-shadow relative overflow-hidden">
                     <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
@@ -514,17 +513,18 @@
     <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, collection, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // ⚠️ ご自身のFirebaseプロジェクトの設定値に書き換えてください ⚠️
-const firebaseConfig = {
-  apiKey: "AIzaSyAd2fHJxEN1o3bemLjPRmqrMEzZ0jXobic",
-  authDomain: "everyday-integral-31ec3.firebaseapp.com",
-  projectId: "everyday-integral-31ec3",
-  storageBucket: "everyday-integral-31ec3.firebasestorage.app",
-  messagingSenderId: "902012359495",
-  appId: "1:902012359495:web:44287308d42e521de37262"
-};
+    // ⚠️ Firebaseの設定情報
+    const firebaseConfig = {
+      apiKey: "AIzaSyD58btsVCpnVruT2AV0j09JGa9MjUByKDI",
+      authDomain: "everyday-integral.firebaseapp.com",
+      projectId: "everyday-integral",
+      storageBucket: "everyday-integral.firebasestorage.app",
+      messagingSenderId: "601401048962",
+      appId: "1:601401048962:web:9b0290caedaf545946599b"
+    };
+
     // Firebase 初期化
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -561,7 +561,7 @@ const firebaseConfig = {
             el.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-[9px]"></i> 保存中...`;
         } else if (status === 'saved') {
             el.className = "text-emerald-600 font-bold ml-1";
-            el.innerHTML = `<i class="fa-solid fa-cloud-check text-[9px]"></i> クラウドに保存済み`;
+            el.innerHTML = `<i class="fa-solid fa-cloud-check text-[9px]"></i> クラウド同期済み`;
         } else if (status === 'offline') {
             el.className = "text-rose-500 font-bold ml-1";
             el.innerHTML = `<i class="fa-solid fa-cloud text-[9px]"></i> オフライン`;
@@ -582,6 +582,9 @@ const firebaseConfig = {
     }
 
     document.addEventListener("DOMContentLoaded", () => {
+        // 最初にローカルキャッシュをロード（オフライン/即時描画対応）
+        loadLocalFallbackData();
+
         initNavigation();
         initCanvasHandlers();
         initExcelImportHandler();
@@ -594,24 +597,27 @@ const firebaseConfig = {
             setCloudStatus('offline');
         });
 
-        // 認証状態の監視 & データダウンロード
+        // 認証状態の監視 & データ同期
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
                 await loadCloudData();
             } else {
-                loadLocalFallbackData();
                 setCloudStatus('saved');
             }
 
-            renderHomeView();
-            renderQuestionsList();
-            renderRulesList();
-            renderReviewList();
-            renderStatsView();
-            renderMath();
+            refreshAllViews();
         });
     });
+
+    function refreshAllViews() {
+        renderHomeView();
+        renderQuestionsList();
+        renderRulesList();
+        renderReviewList();
+        renderStatsView();
+        renderMath();
+    }
 
     // Cloud Data Loading
     async function loadCloudData() {
@@ -626,8 +632,9 @@ const firebaseConfig = {
                     const cloudUserData = userSnap.data();
                     state.streak = cloudUserData.streak || 0;
                     state.lastActiveDate = cloudUserData.lastActiveDate || "";
+                    // 履歴オブジェクトをキー文字列で復元
                     state.history = cloudUserData.history || {};
-                    state.bookmarks = cloudUserData.bookmarks || [];
+                    state.bookmarks = (cloudUserData.bookmarks || []).map(id => String(id));
                     state.weeklyActivity = cloudUserData.weeklyActivity || Array(7).fill(false);
                     state.heatmap = cloudUserData.heatmap || Array(56).fill(0);
                 }
@@ -636,7 +643,11 @@ const firebaseConfig = {
             // 2. Load Questions from Cloud
             const qSnap = await getDocs(collection(db, "questions"));
             const loadedQ = [];
-            qSnap.forEach(d => loadedQ.push(d.data()));
+            qSnap.forEach(d => {
+                const data = d.data();
+                data.id = String(data.id || d.id); // idを厳密に文字列に型変換
+                loadedQ.push(data);
+            });
             if (loadedQ.length > 0) {
                 state.importedQuestions = loadedQ;
             }
@@ -644,16 +655,21 @@ const firebaseConfig = {
             // 3. Load Rules from Cloud
             const rSnap = await getDocs(collection(db, "rules"));
             const loadedR = [];
-            rSnap.forEach(d => loadedR.push(d.data()));
+            rSnap.forEach(d => {
+                const data = d.data();
+                data.id = String(data.id || d.id);
+                loadedR.push(data);
+            });
             if (loadedR.length > 0) {
                 state.importedRules = loadedR;
             }
 
             checkDailyStreak();
+            // 取得したクラウド情報をLocalStorageへキャッシュ
+            localStorage.setItem("mainichi_integ_data", JSON.stringify(state));
             setCloudStatus('saved');
         } catch (e) {
             console.error("Error loading cloud data:", e);
-            loadLocalFallbackData();
             setCloudStatus('offline');
         }
     }
@@ -662,7 +678,10 @@ const firebaseConfig = {
         const saved = localStorage.getItem("mainichi_integ_data");
         if (saved) {
             try {
-                state = Object.assign(state, JSON.parse(saved));
+                const parsed = JSON.parse(saved);
+                state = Object.assign(state, parsed);
+                // ID配列・キーの文字列型保証
+                if (state.bookmarks) state.bookmarks = state.bookmarks.map(id => String(id));
             } catch (e) {
                 console.error("Failed to parse local fallback data:", e);
             }
@@ -673,22 +692,27 @@ const firebaseConfig = {
     async function saveUserData() {
         setCloudStatus('saving');
 
-        // LocalStorage にも保持（オフライン耐性）
+        // 1. LocalStorage に保持
         localStorage.setItem("mainichi_integ_data", JSON.stringify(state));
 
-        // Firestore に同期保存
+        // 2. Firestore に同期保存
         if (currentUser) {
             try {
+                // オブジェクトのシリアライズ（プレーン化）を行って安全にFirestoreにセット
+                const cleanHistory = JSON.parse(JSON.stringify(state.history));
+                const cleanBookmarks = state.bookmarks.map(id => String(id));
+
                 const userDocRef = doc(db, "users", currentUser.uid);
                 await setDoc(userDocRef, {
-                    streak: state.streak,
-                    lastActiveDate: state.lastActiveDate,
-                    history: state.history,
-                    bookmarks: state.bookmarks,
+                    streak: Number(state.streak) || 0,
+                    lastActiveDate: String(state.lastActiveDate || ""),
+                    history: cleanHistory,
+                    bookmarks: cleanBookmarks,
                     weeklyActivity: state.weeklyActivity,
                     heatmap: state.heatmap,
                     updatedAt: Date.now()
                 }, { merge: true });
+
                 setCloudStatus('saved');
             } catch (err) {
                 console.error("Cloud Save Failed:", err);
@@ -736,7 +760,7 @@ const firebaseConfig = {
                     const qRawData = XLSX.utils.sheet_to_json(qSheet);
 
                     const parsedQuestions = qRawData.map((row, index) => ({
-                        id: String(row.id || `q_${index + 1}`),
+                        id: String(row.id || `q_${index + 1}`).trim(),
                         title: String(row.title || `問題 ${index + 1}`),
                         difficulty: String(row.difficulty || "標準"),
                         category: String(row.category || "その他"),
@@ -756,7 +780,7 @@ const firebaseConfig = {
                         const rRawData = XLSX.utils.sheet_to_json(rSheet);
 
                         parsedRules = rRawData.map((row, index) => ({
-                            id: String(row.id || `r_${index + 1}`),
+                            id: String(row.id || `r_${index + 1}`).trim(),
                             title: String(row.title || `定石 ${index + 1}`),
                             tag: String(row.tag || "基本"),
                             rule: String(row.rule || ""),
@@ -787,11 +811,7 @@ const firebaseConfig = {
                     statusMsg.className = "text-[11px] font-bold text-emerald-600";
                     setCloudStatus('saved');
 
-                    renderHomeView();
-                    renderQuestionsList();
-                    renderRulesList();
-                    renderReviewList();
-                    renderStatsView();
+                    refreshAllViews();
 
                 } catch (err) {
                     console.error(err);
@@ -890,18 +910,19 @@ const firebaseConfig = {
 
         document.getElementById('btn-toggle-bookmark-ex').addEventListener('click', async () => {
             if (!currentQuestion) return;
-            const idx = state.bookmarks.indexOf(currentQuestion.id);
+            const qIdStr = String(currentQuestion.id);
+            const idx = state.bookmarks.indexOf(qIdStr);
             if (idx > -1) {
                 state.bookmarks.splice(idx, 1);
             } else {
-                state.bookmarks.push(currentQuestion.id);
+                state.bookmarks.push(qIdStr);
             }
             await saveUserData();
             updateBookmarkButtonUI();
             renderReviewList();
         });
 
-        // Reset 1: 問題データリセット（クラウドからも消去）
+        // Reset 1: 問題データリセット
         document.getElementById('btn-reset-questions').addEventListener('click', async () => {
             if (confirm("クラウドおよび端末上の問題データ・定石データを全削除しますか？\n※学習記録は保持されます。")) {
                 setCloudStatus('saving');
@@ -918,11 +939,7 @@ const firebaseConfig = {
                 state.importedRules = [];
                 await saveUserData();
                 
-                renderHomeView();
-                renderQuestionsList();
-                renderRulesList();
-                renderReviewList();
-                renderStatsView();
+                refreshAllViews();
                 setCloudStatus('saved');
                 alert("問題データを削除しました。");
             }
@@ -938,11 +955,7 @@ const firebaseConfig = {
                 state.weeklyActivity = [false, false, false, false, false, false, false];
                 state.heatmap = Array(56).fill(0);
                 await saveUserData();
-                renderHomeView();
-                renderQuestionsList();
-                renderRulesList();
-                renderReviewList();
-                renderStatsView();
+                refreshAllViews();
                 alert("学習記録をリセットしました。");
             }
         });
@@ -950,8 +963,9 @@ const firebaseConfig = {
         document.getElementById('btn-start-review-all').addEventListener('click', () => {
             const list = state.importedQuestions;
             const reviewQueue = list.filter(q => {
-                const h = state.history[q.id];
-                return (h && (h.status === 'uncertain' || h.status === 'failed')) || state.bookmarks.includes(q.id);
+                const qIdStr = String(q.id);
+                const h = state.history[qIdStr];
+                return (h && (h.status === 'uncertain' || h.status === 'failed')) || state.bookmarks.includes(qIdStr);
             });
             if (reviewQueue.length > 0) {
                 openExerciseModal(reviewQueue[0]);
@@ -1057,14 +1071,15 @@ const firebaseConfig = {
         }
 
         filtered.forEach(q => {
-            const userHistory = state.history[q.id];
+            const qIdStr = String(q.id);
+            const userHistory = state.history[qIdStr];
             let statusBadge = '';
             if (userHistory) {
                 if (userHistory.status === 'master') {
                     statusBadge = `<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200"><i class="fa-solid fa-check"></i> 完璧</span>`;
                 } else if (userHistory.status === 'uncertain') {
                     statusBadge = `<span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200"><i class="fa-solid fa-triangle-exclamation"></i> あやふや</span>`;
-                } else {
+                } else if (userHistory.status === 'failed') {
                     statusBadge = `<span class="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200"><i class="fa-solid fa-xmark"></i> 要復習</span>`;
                 }
             }
@@ -1183,13 +1198,15 @@ const firebaseConfig = {
 
         const list = state.importedQuestions;
         const reviewItems = list.filter(q => {
-            const h = state.history[q.id];
-            const isBookmarked = state.bookmarks.includes(q.id);
+            const qIdStr = String(q.id);
+            const h = state.history[qIdStr];
+            const isBookmarked = state.bookmarks.includes(qIdStr);
             return (h && (h.status === 'uncertain' || h.status === 'failed')) || isBookmarked;
         });
 
         const pendingCount = list.filter(q => {
-            const h = state.history[q.id];
+            const qIdStr = String(q.id);
+            const h = state.history[qIdStr];
             return h && (h.status === 'uncertain' || h.status === 'failed');
         }).length;
 
@@ -1207,13 +1224,14 @@ const firebaseConfig = {
         }
 
         reviewItems.forEach(q => {
+            const qIdStr = String(q.id);
             const card = document.createElement('div');
             card.className = "bg-white border border-slate-100 rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-amber-300 transition-all card-shadow";
             card.innerHTML = `
                 <div class="space-y-1 overflow-hidden pr-2">
                     <div class="flex items-center space-x-2">
                         <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">${q.category}</span>
-                        ${state.bookmarks.includes(q.id) ? '<i class="fa-solid fa-star text-amber-400 text-xs"></i>' : ''}
+                        ${state.bookmarks.includes(qIdStr) ? '<i class="fa-solid fa-star text-amber-400 text-xs"></i>' : ''}
                     </div>
                     <div class="text-sm font-bold text-slate-800 flex items-center space-x-2">
                         <span>${q.title}</span>
@@ -1245,13 +1263,13 @@ const firebaseConfig = {
 
         const list = state.importedQuestions;
         const basicTotal = list.filter(q => q.difficulty === '基礎').length;
-        const basicSolved = list.filter(q => q.difficulty === '基礎' && state.history[q.id]?.status === 'master').length;
+        const basicSolved = list.filter(q => q.difficulty === '基礎' && state.history[String(q.id)]?.status === 'master').length;
         
         const stdTotal = list.filter(q => q.difficulty === '標準').length;
-        const stdSolved = list.filter(q => q.difficulty === '標準' && state.history[q.id]?.status === 'master').length;
+        const stdSolved = list.filter(q => q.difficulty === '標準' && state.history[String(q.id)]?.status === 'master').length;
 
         const advTotal = list.filter(q => q.difficulty === '応用').length;
-        const advSolved = list.filter(q => q.difficulty === '応用' && state.history[q.id]?.status === 'master').length;
+        const advSolved = list.filter(q => q.difficulty === '応用' && state.history[String(q.id)]?.status === 'master').length;
 
         document.getElementById('stat-diff-basic-text').textContent = `${basicSolved} / ${basicTotal}`;
         document.getElementById('stat-diff-basic-bar').style.width = `${(basicSolved / (basicTotal || 1)) * 100}%`;
@@ -1301,7 +1319,8 @@ const firebaseConfig = {
     function updateBookmarkButtonUI() {
         if (!currentQuestion) return;
         const btn = document.getElementById('btn-toggle-bookmark-ex');
-        if (state.bookmarks.includes(currentQuestion.id)) {
+        const qIdStr = String(currentQuestion.id);
+        if (state.bookmarks.includes(qIdStr)) {
             btn.className = "text-amber-400 p-1 rounded-lg transition-colors";
         } else {
             btn.className = "text-slate-300 hover:text-amber-400 p-1 rounded-lg transition-colors";
@@ -1322,17 +1341,16 @@ const firebaseConfig = {
         const targetIndex = 49 + dayOfWeekIndex;
         state.heatmap[targetIndex] = (state.heatmap[targetIndex] || 0) + 1;
 
-        state.history[currentQuestion.id] = {
+        // 問題IDを確実に文字列としてキーに登録
+        const qIdStr = String(currentQuestion.id);
+        state.history[qIdStr] = {
             status: rating,
             timestamp: Date.now()
         };
 
         await saveUserData();
         closeExerciseModal();
-        renderHomeView();
-        renderReviewList();
-        renderQuestionsList();
-        renderStatsView();
+        refreshAllViews();
     }
 
     function initCanvasHandlers() {
