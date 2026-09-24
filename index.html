@@ -516,21 +516,19 @@
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // ⚠️ ご自身のFirebaseプロジェクトの設定値に書き換えてください ⚠️
-const firebaseConfig = {
-  apiKey: "AIzaSyAd2fHJxEN1o3bemLjPRmqrMEzZ0jXobic",
-  authDomain: "everyday-integral-31ec3.firebaseapp.com",
-  projectId: "everyday-integral-31ec3",
-  storageBucket: "everyday-integral-31ec3.firebasestorage.app",
-  messagingSenderId: "902012359495",
-  appId: "1:902012359495:web:44287308d42e521de37262"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyAd2fHJxEN1o3bemLjPRmqrMEzZ0jXobic",
+      authDomain: "everyday-integral-31ec3.firebaseapp.com",
+      projectId: "everyday-integral-31ec3",
+      storageBucket: "everyday-integral-31ec3.firebasestorage.app",
+      messagingSenderId: "902012359495",
+      appId: "1:902012359495:web:44287308d42e521de37262"
+    };
+
     // Firebase 初期化
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-
-    let currentUser = null;
 
     // State management
     let state = {
@@ -588,7 +586,7 @@ const firebaseConfig = {
 
         setCloudStatus('saving');
 
-        // Firebase Auth: 匿名認証の実行
+        // Firebase Auth: 匿名認証を実行
         signInAnonymously(auth).catch((error) => {
             console.error("Firebase Anonymous Auth Error:", error);
             setCloudStatus('offline');
@@ -596,13 +594,7 @@ const firebaseConfig = {
 
         // 認証状態の監視 & データダウンロード
         onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUser = user;
-                await loadCloudData();
-            } else {
-                loadLocalFallbackData();
-                setCloudStatus('saved');
-            }
+            await loadCloudData();
 
             renderHomeView();
             renderQuestionsList();
@@ -613,24 +605,22 @@ const firebaseConfig = {
         });
     });
 
-    // Cloud Data Loading
+    // Cloud Data Loading (全端末で共有の固定ドキュメントを参照)
     async function loadCloudData() {
         try {
             setCloudStatus('saving');
 
-            // 1. Load User Profile & Progress
-            if (currentUser) {
-                const userDocRef = doc(db, "users", currentUser.uid);
-                const userSnap = await getDoc(userDocRef);
-                if (userSnap.exists()) {
-                    const cloudUserData = userSnap.data();
-                    state.streak = cloudUserData.streak || 0;
-                    state.lastActiveDate = cloudUserData.lastActiveDate || "";
-                    state.history = cloudUserData.history || {};
-                    state.bookmarks = cloudUserData.bookmarks || [];
-                    state.weeklyActivity = cloudUserData.weeklyActivity || Array(7).fill(false);
-                    state.heatmap = cloudUserData.heatmap || Array(56).fill(0);
-                }
+            // 1. Load User Profile & Progress from Fixed Document
+            const userDocRef = doc(db, "appData", "user_progress");
+            const userSnap = await getDoc(userDocRef);
+            if (userSnap.exists()) {
+                const cloudUserData = userSnap.data();
+                state.streak = cloudUserData.streak || 0;
+                state.lastActiveDate = cloudUserData.lastActiveDate || "";
+                state.history = cloudUserData.history || {};
+                state.bookmarks = cloudUserData.bookmarks || [];
+                state.weeklyActivity = cloudUserData.weeklyActivity || Array(7).fill(false);
+                state.heatmap = cloudUserData.heatmap || Array(56).fill(0);
             }
 
             // 2. Load Questions from Cloud
@@ -670,32 +660,29 @@ const firebaseConfig = {
         checkDailyStreak();
     }
 
+    // Save Data (固定の共有ドキュメントへ保存)
     async function saveUserData() {
         setCloudStatus('saving');
 
         // LocalStorage にも保持（オフライン耐性）
         localStorage.setItem("mainichi_integ_data", JSON.stringify(state));
 
-        // Firestore に同期保存
-        if (currentUser) {
-            try {
-                const userDocRef = doc(db, "users", currentUser.uid);
-                await setDoc(userDocRef, {
-                    streak: state.streak,
-                    lastActiveDate: state.lastActiveDate,
-                    history: state.history,
-                    bookmarks: state.bookmarks,
-                    weeklyActivity: state.weeklyActivity,
-                    heatmap: state.heatmap,
-                    updatedAt: Date.now()
-                }, { merge: true });
-                setCloudStatus('saved');
-            } catch (err) {
-                console.error("Cloud Save Failed:", err);
-                setCloudStatus('offline');
-            }
-        } else {
+        // Firestore に同期保存 (固定パス: appData/user_progress)
+        try {
+            const userDocRef = doc(db, "appData", "user_progress");
+            await setDoc(userDocRef, {
+                streak: state.streak,
+                lastActiveDate: state.lastActiveDate,
+                history: state.history,
+                bookmarks: state.bookmarks,
+                weeklyActivity: state.weeklyActivity,
+                heatmap: state.heatmap,
+                updatedAt: Date.now()
+            }, { merge: true });
             setCloudStatus('saved');
+        } catch (err) {
+            console.error("Cloud Save Failed:", err);
+            setCloudStatus('offline');
         }
         updateHeaderAndHomeUI();
     }
