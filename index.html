@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>毎日積分 - 数学III 積分計算ドリル</title>
+    <!-- ファビコンの設定 -->
+    <link rel="icon" type="image/png" href="favicon.png">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS for Excel (xlsx) Parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- KaTeX for high-speed Math LaTeX rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & Noto Sans JP -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            background-color: #f1f5f9;
+            color: #0f172a;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .bg-app-pattern {
+            background-color: #f8fafc;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(219, 234, 254, 0.6) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(224, 231, 255, 0.6) 0px, transparent 50%);
+        }
+        .canvas-bg {
+            background-color: #ffffff;
+            background-image: linear-gradient(#f1f5f9 1px, transparent 1px), linear-gradient(90deg, #f1f5f9 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .card-shadow {
+            box-shadow: 0 4px 20px -2px rgba(148, 163, 184, 0.15);
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-start min-h-screen pb-20 md:pb-6 selection:bg-blue-600 selection:text-white bg-app-pattern">
+
+    <!-- App Container -->
+    <div id="app" class="w-full max-w-md md:max-w-xl min-h-screen bg-slate-50 shadow-xl flex flex-col relative overflow-hidden border-x border-slate-200">
+        
+        <!-- Top App Header Bar -->
+        <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-100 px-4 py-3 flex items-center justify-between shadow-sm">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-bold text-white shadow-md text-lg">
+                    ∫
+                </div>
+                <div>
+                    <h1 class="text-base font-extrabold tracking-tight text-slate-900">毎日積分</h1>
+                    <p class="text-[10px] text-slate-500 font-medium flex items-center gap-1">
+                        数学III 積分ドリル 
+                        <span id="cloud-status" class="text-amber-500 font-bold ml-1"><i class="fa-solid fa-spinner fa-spin text-[9px]"></i> 接続中...</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Header Right Badges -->
+            <div class="flex items-center space-x-2">
+                <div id="header-streak-badge" class="flex items-center space-x-1 bg-amber-50 border border-amber-200 text-amber-600 text-xs font-bold px-2.5 py-1 rounded-full">
+                    <i class="fa-solid fa-fire text-amber-500"></i>
+                    <span id="header-streak-count">0</span>
+                    <span class="text-[10px]">日連続</span>
+                </div>
+                <div class="bg-blue-50 border border-blue-200 text-blue-600 text-xs font-bold px-2.5 py-1 rounded-full">
+                    <span id="header-level-text">Lv.1</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Scroll Area -->
+        <main class="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-24">
+            
+            <!-- VIEW 1: HOME -->
+            <section id="view-home" class="space-y-5">
+                
+                <!-- Today's Problem Main Card -->
+                <div class="bg-gradient-to-br from-blue-600 via-blue-600 to-indigo-600 rounded-3xl p-5 text-white card-shadow relative overflow-hidden">
+                    <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+                    
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center space-x-2">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-white/20 text-white backdrop-blur-sm border border-white/20">今日の1問</span>
+                            <span id="today-date-text" class="text-xs text-blue-100 font-medium">--月--日</span>
+                        </div>
+                        <span id="today-tag-badge" class="text-[11px] font-semibold text-blue-100 bg-white/10 px-2.5 py-0.5 rounded-md border border-white/10">置換積分</span>
+                    </div>
+
+                    <!-- Latex Display Box -->
+                    <div class="bg-white/95 backdrop-blur rounded-2xl p-4 my-3 text-center min-h-[90px] flex items-center justify-center text-slate-900 shadow-inner overflow-x-auto">
+                        <div id="today-math-container" class="text-xl md:text-2xl font-serif">
+                            $$\text{読み込み中...}$$
+                        </div>
+                    </div>
+
+                    <button id="btn-start-today" class="w-full mt-2 py-3 bg-white hover:bg-slate-50 text-blue-600 font-bold rounded-2xl shadow-md transition-all flex items-center justify-center space-x-2">
+                        <span>挑戦する</span>
+                        <i class="fa-solid fa-arrow-right text-sm"></i>
+                    </button>
+                </div>
+
+                <!-- Weekly Activity -->
+                <div class="bg-white border border-slate-100 rounded-2xl p-4 card-shadow">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-xs font-bold text-slate-700 flex items-center space-x-1.5">
+                            <i class="fa-regular fa-calendar-check text-blue-600"></i>
+                            <span>今週の学習状況</span>
+                        </h3>
+                        <span id="weekly-count-text" class="text-xs text-slate-500 font-medium">0 / 7 日達成</span>
+                    </div>
+                    <div class="grid grid-cols-7 gap-2 text-center">
+                        <div class="flex flex-col items-center space-y-1"><span class="text-[10px] text-slate-400 font-medium">月</span><div id="day-dot-0" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-xs font-bold"><i class="fa-solid fa-minus"></i></div></div>
+                        <div class="flex flex-col items-center space-y-1"><span class="text-[10px] text-slate-400 font-medium">火</span><div id="day-dot-1" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-xs font-bold"><i class="fa-solid fa-minus"></i></div></div>
+                        <div class="flex flex-col items-center space-y-1"><span class="text-[10px] text-slate-400 font-medium">水</span><div id="day-dot-2" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-xs font-bold"><i class="fa-solid fa-minus"></i></div></div>
+                        <div class="flex flex-col items-center space-y-1"><span class="text-[10px] text-slate-400 font-medium">木</span><div id="day-dot-3" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-xs font-bold"><i class="fa-solid fa-minus"></i></div></div>
+                        <div class="flex flex-col items-center space-y-1"><span class="text-[10px] text-slate-400 font-medium">金</span><div id="day-dot-4" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-xs font-bold"><i class="fa-solid fa-minus"></i></div></div>
+                        <div class="flex flex-col items-center space-y-1"><span class="text-[10px] text-slate-400 font-medium">土</span><div id="day-dot-5" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-xs font-bold"><i class="fa-solid fa-minus"></i></div></div>
+                        <div class="flex flex-col items-center space-y-1"><span class="text-[10px] text-slate-400 font-medium">日</span><div id="day-dot-6" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-xs font-bold"><i class="fa-solid fa-minus"></i></div></div>
+                    </div>
+                </div>
+
+                <!-- Level & Progress Bar -->
+                <div class="bg-white border border-slate-100 rounded-2xl p-4 card-shadow">
+                    <div class="flex justify-between items-center mb-2">
+                        <span id="level-title-display" class="text-xs font-bold text-slate-800">レベル 1 (ビギナー)</span>
+                        <span id="level-xp-display" class="text-xs text-blue-600 font-bold">次まで あと 3 問</span>
+                    </div>
+                    <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div id="level-bar-fill" class="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Heatmap Grass Calendar -->
+                <div class="bg-white border border-slate-100 rounded-2xl p-4 space-y-3 card-shadow">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xs font-bold text-slate-700 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-chart-simple text-blue-600"></i>
+                            <span>学習記録 (直近 8 週間)</span>
+                        </h3>
+                        <span id="total-solved-count-home" class="text-xs text-slate-500 font-bold">累計 0 問解答</span>
+                    </div>
+                    
+                    <div class="overflow-x-auto pb-1 flex items-center justify-center">
+                        <div class="flex items-center space-x-2">
+                            <div class="grid grid-rows-7 gap-1.5 text-[9px] text-slate-400 font-bold select-none text-right pr-1">
+                                <span class="h-3 flex items-center justify-end">月</span>
+                                <span class="h-3 flex items-center justify-end">火</span>
+                                <span class="h-3 flex items-center justify-end">水</span>
+                                <span class="h-3 flex items-center justify-end">木</span>
+                                <span class="h-3 flex items-center justify-end">金</span>
+                                <span class="h-3 flex items-center justify-end">土</span>
+                                <span class="h-3 flex items-center justify-end">日</span>
+                            </div>
+                            <div id="heatmap-grid" class="grid grid-rows-7 grid-flow-col gap-1.5"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-end text-[10px] text-slate-400 space-x-1">
+                        <span>少</span>
+                        <div class="w-2.5 h-2.5 bg-slate-100 rounded-sm"></div>
+                        <div class="w-2.5 h-2.5 bg-blue-200 rounded-sm"></div>
+                        <div class="w-2.5 h-2.5 bg-blue-400 rounded-sm"></div>
+                        <div class="w-2.5 h-2.5 bg-blue-600 rounded-sm"></div>
+                        <span>多</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 2: QUESTIONS (問題一覧) -->
+            <section id="view-questions" class="space-y-4 hidden">
+                <!-- XLSX Import Box -->
+                <div class="bg-white border-2 border-dashed border-blue-200 rounded-2xl p-4 text-center space-y-2 card-shadow">
+                    <div class="flex items-center justify-center space-x-2 text-blue-600 font-bold text-xs">
+                        <i class="fa-solid fa-cloud-arrow-up text-base"></i>
+                        <span>問題データ (.xlsx) をクラウド登録</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500">Excelファイルを読み込み、Firebaseクラウドに保管します。</p>
+                    <label class="inline-flex items-center px-4 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 rounded-xl text-xs font-bold cursor-pointer transition-all">
+                        <i class="fa-solid fa-upload mr-1.5"></i>
+                        <span>ファイルを選択してクラウドへ追加</span>
+                        <input id="input-excel-file" type="file" accept=".xlsx, .xls" class="hidden">
+                    </label>
+                    <div id="import-status-msg" class="text-[11px] font-semibold text-slate-500"></div>
+                </div>
+
+                <!-- Search Input -->
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input id="input-search-questions" type="text" placeholder="分野・式・問題番号で検索" 
+                           class="w-full bg-slate-100/80 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-blue-500 transition-colors">
+                </div>
+
+                <!-- Difficulty Filter Pills -->
+                <div class="flex items-center space-x-2 overflow-x-auto no-scrollbar py-1">
+                    <button class="filter-diff-btn active text-xs font-bold px-3.5 py-1.5 rounded-full bg-blue-600 text-white shadow-sm transition-all" data-diff="all">すべて</button>
+                    <button class="filter-diff-btn text-xs font-bold px-3.5 py-1.5 rounded-full bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition-all" data-diff="基礎">基礎</button>
+                    <button class="filter-diff-btn text-xs font-bold px-3.5 py-1.5 rounded-full bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition-all" data-diff="標準">標準</button>
+                    <button class="filter-diff-btn text-xs font-bold px-3.5 py-1.5 rounded-full bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition-all" data-diff="応用">応用</button>
+                    <button class="filter-diff-btn text-xs font-bold px-3.5 py-1.5 rounded-full bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition-all" data-diff="発展">発展</button>
+                </div>
+
+                <div class="flex justify-between items-center text-xs text-slate-500 font-medium px-1">
+                    <span id="question-count-badge">該当 0 問</span>
+                    <span>タップして問題を開く</span>
+                </div>
+
+                <!-- Questions List Container -->
+                <div id="questions-list-container" class="space-y-3"></div>
+            </section>
+
+            <!-- VIEW 3: RULES & PATTERNS (定石集) -->
+            <section id="view-rules" class="space-y-4 hidden">
+                <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl p-4 card-shadow">
+                    <h2 class="text-sm font-bold flex items-center space-x-2">
+                        <i class="fa-solid fa-key text-amber-300"></i>
+                        <span>解法の「型」を身につける定石</span>
+                    </h2>
+                    <p class="text-xs text-blue-100 mt-1">定石と例題で、理解をより深く高めます。</p>
+                </div>
+
+                <div id="rules-list-container" class="space-y-3"></div>
+            </section>
+
+            <!-- VIEW 4: REVIEW (復習) -->
+            <section id="view-review" class="space-y-4 hidden">
+                <div class="bg-white border border-slate-100 rounded-2xl p-4 text-center space-y-2 card-shadow">
+                    <div class="w-12 h-12 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto text-xl border border-amber-200">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </div>
+                    <h2 class="text-sm font-bold text-slate-900">弱点克服・復習モード</h2>
+                    <p class="text-xs text-slate-500">「要復習」「あやふや」と判定した問題やブックマークした問題を再計算します。</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-white border border-slate-100 rounded-2xl p-3 text-center card-shadow">
+                        <span class="text-xs text-slate-500">復習待ち</span>
+                        <div id="review-pending-count" class="text-xl font-extrabold text-amber-500 my-1">0</div>
+                        <span class="text-[10px] text-slate-400">要復習・あやふや</span>
+                    </div>
+                    <div class="bg-white border border-slate-100 rounded-2xl p-3 text-center card-shadow">
+                        <span class="text-xs text-slate-500">ブックマーク</span>
+                        <div id="review-bookmark-count" class="text-xl font-extrabold text-blue-600 my-1">0</div>
+                        <span class="text-[10px] text-slate-400">お気に入り保存</span>
+                    </div>
+                </div>
+
+                <button id="btn-start-review-all" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-2xl shadow-md transition-all flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-play text-xs"></i>
+                    <span>復習セッションを開始</span>
+                </button>
+
+                <div id="review-list-container" class="space-y-3 pt-2"></div>
+            </section>
+
+            <!-- VIEW 5: STATS (記録) -->
+            <section id="view-stats" class="space-y-4 hidden">
+                <div class="bg-white border border-slate-100 rounded-2xl p-4 card-shadow">
+                    <h2 class="text-xs font-bold text-slate-700 mb-3 flex items-center space-x-2">
+                        <i class="fa-solid fa-trophy text-amber-500"></i>
+                        <span>マスター状況</span>
+                    </h2>
+                    <div class="grid grid-cols-3 gap-2 text-center">
+                        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                            <span class="text-[10px] text-emerald-600 font-bold block">完璧</span>
+                            <span id="stat-master-count" class="text-lg font-black text-slate-800">0</span>
+                        </div>
+                        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                            <span class="text-[10px] text-amber-600 font-bold block">あやふや</span>
+                            <span id="stat-uncertain-count" class="text-lg font-black text-slate-800">0</span>
+                        </div>
+                        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                            <span class="text-[10px] text-rose-600 font-bold block">要復習</span>
+                            <span id="stat-failed-count" class="text-lg font-black text-slate-800">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Difficulty Stats -->
+                <div class="bg-white border border-slate-100 rounded-2xl p-4 space-y-3 card-shadow">
+                    <h3 class="text-xs font-bold text-slate-700">難易度別クリア状況</h3>
+                    <div class="space-y-2.5">
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-emerald-600 font-bold">基礎問題</span>
+                                <span id="stat-diff-basic-text" class="text-slate-400">0 / 0</span>
+                            </div>
+                            <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div id="stat-diff-basic-bar" class="h-full bg-emerald-500 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-blue-600 font-bold">標準問題</span>
+                                <span id="stat-diff-standard-text" class="text-slate-400">0 / 0</span>
+                            </div>
+                            <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div id="stat-diff-standard-bar" class="h-full bg-blue-500 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-purple-600 font-bold">応用問題</span>
+                                <span id="stat-diff-advanced-text" class="text-slate-400">0 / 0</span>
+                            </div>
+                            <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div id="stat-diff-advanced-bar" class="h-full bg-purple-500 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Separated Reset Action Area -->
+                <div class="pt-4 space-y-2 bg-white border border-slate-100 rounded-2xl p-4 card-shadow">
+                    <h3 class="text-xs font-bold text-slate-700 mb-2">データ管理・初期化</h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="btn-reset-questions" class="py-2 px-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5">
+                            <i class="fa-solid fa-file-circle-xmark text-xs"></i>
+                            <span>問題データリセット</span>
+                        </button>
+                        <button id="btn-reset-history" class="py-2 px-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5">
+                            <i class="fa-solid fa-rotate-right text-xs"></i>
+                            <span>学習記録リセット</span>
+                        </button>
+                    </div>
+                    <p class="text-[10px] text-slate-400 text-center mt-1">※リセット操作はクラウド上にも即時反映されます。</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- VIEW 6: EXERCISE MODAL -->
+        <div id="exercise-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex flex-col hidden overflow-hidden justify-end md:justify-center items-center">
+            <div class="w-full max-w-md md:max-w-xl h-[92vh] bg-white rounded-t-3xl md:rounded-3xl flex flex-col overflow-hidden shadow-2xl">
+                <div class="bg-white border-b border-slate-100 px-4 py-3 flex items-center justify-between">
+                    <button id="btn-close-exercise" class="text-blue-600 font-bold text-sm flex items-center space-x-1">
+                        <i class="fa-solid fa-chevron-left text-xs"></i>
+                        <span>Back</span>
+                    </button>
+                    <div class="flex items-center space-x-2">
+                        <span id="ex-diff-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-200">標準</span>
+                        <span id="ex-category-text" class="text-xs text-slate-700 font-bold">置換積分</span>
+                    </div>
+                    <button id="btn-toggle-bookmark-ex" class="text-slate-300 hover:text-amber-400 p-1 rounded-lg transition-colors">
+                        <i class="fa-solid fa-star text-lg"></i>
+                    </button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50">
+                    <div class="bg-white border border-slate-100 rounded-2xl p-4 card-shadow text-center space-y-2">
+                        <p id="ex-instruction" class="text-xs text-slate-500">次の不定積分（または定積分）を求めよ。</p>
+                        <div id="ex-math-display" class="py-2 text-xl md:text-2xl text-slate-900 font-serif overflow-x-auto"></div>
+                    </div>
+
+                    <!-- Canvas Notebook -->
+                    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden card-shadow flex flex-col">
+                        <div class="bg-slate-100/80 border-b border-slate-200 px-3 py-2 flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-[11px] font-bold text-slate-600"><i class="fa-solid fa-pen-nib text-blue-600 mr-1"></i>ノート</span>
+                                <button id="tool-pen-black" class="tool-color-btn w-6 h-6 rounded-full bg-slate-900 border-2 border-blue-600 flex items-center justify-center text-[10px] text-white" data-color="#0f172a">
+                                    <i class="fa-solid fa-check"></i>
+                                </button>
+                                <button id="tool-pen-blue" class="tool-color-btn w-6 h-6 rounded-full bg-blue-600 border-2 border-transparent flex items-center justify-center text-[10px] text-white" data-color="#2563eb"></button>
+                                <button id="tool-pen-red" class="tool-color-btn w-6 h-6 rounded-full bg-rose-500 border-2 border-transparent flex items-center justify-center text-[10px] text-white" data-color="#f43f5e"></button>
+                            </div>
+                            <div class="flex items-center space-x-1.5">
+                                <button id="tool-eraser" class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center space-x-1">
+                                    <i class="fa-solid fa-eraser text-[10px]"></i>
+                                    <span>消しゴム</span>
+                                </button>
+                                <button id="tool-undo" class="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs" title="元に戻す">
+                                    <i class="fa-solid fa-rotate-left"></i>
+                                </button>
+                                <button id="tool-clear" class="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-rose-500 text-xs" title="クリア">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="relative w-full h-[220px] canvas-bg touch-none">
+                            <canvas id="scratchpad-canvas" class="w-full h-full cursor-crosshair"></canvas>
+                            <div id="canvas-placeholder" class="absolute inset-0 pointer-events-none flex items-center justify-center text-slate-300 text-xs font-medium">
+                                ペンと消しゴムで自由に計算
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hints -->
+                    <div class="space-y-2">
+                        <button id="btn-toggle-hint1" class="w-full px-4 py-2.5 bg-white border border-slate-100 hover:border-slate-200 rounded-xl text-left text-xs text-amber-600 font-bold flex justify-between items-center transition-all card-shadow">
+                            <span class="flex items-center space-x-1.5">
+                                <i class="fa-regular fa-lightbulb"></i>
+                                <span>ヒント1：解法の定石・着眼点</span>
+                            </span>
+                            <i id="hint1-arrow" class="fa-solid fa-chevron-down text-slate-400 transition-transform"></i>
+                        </button>
+                        <div id="hint1-content" class="hidden bg-white border border-slate-100 rounded-xl p-3 text-xs text-slate-700 space-y-1 overflow-x-auto"></div>
+
+                        <button id="btn-toggle-hint2" class="w-full px-4 py-2.5 bg-white border border-slate-100 hover:border-slate-200 rounded-xl text-left text-xs text-blue-600 font-bold flex justify-between items-center transition-all card-shadow">
+                            <span class="flex items-center space-x-1.5">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                <span>ヒント2：具体的な変形手順</span>
+                            </span>
+                            <i id="hint2-arrow" class="fa-solid fa-chevron-down text-slate-400 transition-transform"></i>
+                        </button>
+                        <div id="hint2-content" class="hidden bg-white border border-slate-100 rounded-xl p-3 text-xs text-slate-700 space-y-1 overflow-x-auto"></div>
+                    </div>
+
+                    <button id="btn-show-solution" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-md flex items-center justify-center space-x-2 transition-all">
+                        <i class="fa-solid fa-eye text-xs"></i>
+                        <span>解答・解説を見る</span>
+                    </button>
+
+                    <div id="solution-drawer" class="hidden space-y-4 pt-2">
+                        <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center space-y-1 card-shadow">
+                            <span class="text-[11px] font-extrabold text-emerald-700 tracking-wider uppercase">【 模範解答 】</span>
+                            <div id="solution-answer-math" class="text-lg md:text-xl text-slate-900 font-serif py-1 overflow-x-auto"></div>
+                        </div>
+
+                        <div class="bg-white border border-slate-100 rounded-2xl p-4 space-y-3 card-shadow">
+                            <h4 class="text-xs font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center space-x-1.5">
+                                <i class="fa-solid fa-book-open text-blue-600"></i>
+                                <span>詳しい途中式とポイント解説</span>
+                            </h4>
+                            <div id="solution-explanation-text" class="text-xs text-slate-700 leading-relaxed space-y-2 overflow-x-auto"></div>
+                        </div>
+
+                        <div class="bg-white border border-slate-100 rounded-2xl p-4 space-y-3 text-center card-shadow">
+                            <p class="text-xs font-bold text-slate-800">理解度を選択して記録</p>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button class="btn-rate-result py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 text-xs font-bold transition-all flex flex-col items-center justify-center space-y-1" data-rating="master">
+                                    <i class="fa-solid fa-circle-check text-base"></i>
+                                    <span>完璧</span>
+                                </button>
+                                <button class="btn-rate-result py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 text-xs font-bold transition-all flex flex-col items-center justify-center space-y-1" data-rating="uncertain">
+                                    <i class="fa-solid fa-triangle-exclamation text-base"></i>
+                                    <span>あやふや</span>
+                                </button>
+                                <button class="btn-rate-result py-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 text-xs font-bold transition-all flex flex-col items-center justify-center space-y-1" data-rating="failed">
+                                    <i class="fa-solid fa-xmark text-base"></i>
+                                    <span>要復習</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fixed Bottom Navigation Bar -->
+        <nav class="fixed bottom-0 z-40 w-full max-w-md md:max-w-xl bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-1.5 flex justify-around items-center">
+            <button class="nav-tab-btn active flex flex-col items-center py-1 px-3 rounded-xl text-blue-600 transition-colors" data-view="home">
+                <i class="fa-solid fa-house text-lg"></i>
+                <span class="text-[10px] font-bold mt-0.5">ホーム</span>
+            </button>
+            <button class="nav-tab-btn flex flex-col items-center py-1 px-3 rounded-xl text-slate-400 hover:text-slate-600 transition-colors" data-view="questions">
+                <i class="fa-solid fa-list-check text-lg"></i>
+                <span class="text-[10px] font-bold mt-0.5">問題</span>
+            </button>
+            <button class="nav-tab-btn flex flex-col items-center py-1 px-3 rounded-xl text-slate-400 hover:text-slate-600 transition-colors" data-view="rules">
+                <i class="fa-solid fa-key text-lg"></i>
+                <span class="text-[10px] font-bold mt-0.5">定石</span>
+            </button>
+            <button class="nav-tab-btn flex flex-col items-center py-1 px-3 rounded-xl text-slate-400 hover:text-slate-600 transition-colors" data-view="review">
+                <i class="fa-solid fa-rotate-left text-lg"></i>
+                <span class="text-[10px] font-bold mt-0.5">復習</span>
+            </button>
+            <button class="nav-tab-btn flex flex-col items-center py-1 px-3 rounded-xl text-slate-400 hover:text-slate-600 transition-colors" data-view="stats">
+                <i class="fa-solid fa-chart-pie text-lg"></i>
+                <span class="text-[10px] font-bold mt-0.5">記録</span>
+            </button>
+        </nav>
+
+        <!-- Rule Detail Modal -->
+        <div id="rule-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+            <div class="bg-white border border-slate-100 w-full max-w-sm rounded-3xl p-5 space-y-4 shadow-2xl relative max-h-[85vh] overflow-y-auto">
+                <button id="btn-close-rule-modal" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+                <div id="rule-modal-content"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Firebase JS SDK (v10) Modules -->
+    <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // ⚠️ ご自身のFirebaseプロジェクトの設定値に書き換えてください ⚠️
+const firebaseConfig = {
+  apiKey: "AIzaSyD58btsVCpnVruT2AV0j09JGa9MjUByKDI",
+  authDomain: "everyday-integral.firebaseapp.com",
+  projectId: "everyday-integral",
+  storageBucket: "everyday-integral.firebasestorage.app",
+  messagingSenderId: "601401048962",
+  appId: "1:601401048962:web:9b0290caedaf545946599b"
+};
+    // Firebase 初期化
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUser = null;
+
+    // State management
+    let state = {
+        streak: 0,
+        lastActiveDate: "",
+        history: {},
+        bookmarks: [],
+        weeklyActivity: [false, false, false, false, false, false, false],
+        heatmap: Array(56).fill(0),
+        importedQuestions: [],
+        importedRules: []
+    };
+
+    let currentQuestion = null;
+    let canvas, ctx;
+    let isDrawing = false;
+    let strokeHistory = [];
+    let currentColor = "#0f172a";
+    let isEraser = false;
+
+    // UIステータスを動的制御する共通ヘルパー関数
+    function setCloudStatus(status) {
+        const el = document.getElementById('cloud-status');
+        if (!el) return;
+
+        if (status === 'saving') {
+            el.className = "text-amber-500 font-bold ml-1";
+            el.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-[9px]"></i> 保存中...`;
+        } else if (status === 'saved') {
+            el.className = "text-emerald-600 font-bold ml-1";
+            el.innerHTML = `<i class="fa-solid fa-cloud-check text-[9px]"></i> クラウドに保存済み`;
+        } else if (status === 'offline') {
+            el.className = "text-rose-500 font-bold ml-1";
+            el.innerHTML = `<i class="fa-solid fa-cloud text-[9px]"></i> オフライン`;
+        }
+    }
+
+    // Helper: Global Math Rendering
+    function renderMath(element = document.body) {
+        if (window.renderMathInElement) {
+            renderMathInElement(element, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false}
+                ],
+                throwOnError: false
+            });
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        initNavigation();
+        initCanvasHandlers();
+        initExcelImportHandler();
+
+        setCloudStatus('saving');
+
+        // Firebase Auth: 匿名認証の実行
+        signInAnonymously(auth).catch((error) => {
+            console.error("Firebase Anonymous Auth Error:", error);
+            setCloudStatus('offline');
+        });
+
+        // 認証状態の監視 & データダウンロード
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                await loadCloudData();
+            } else {
+                loadLocalFallbackData();
+                setCloudStatus('saved');
+            }
+
+            renderHomeView();
+            renderQuestionsList();
+            renderRulesList();
+            renderReviewList();
+            renderStatsView();
+            renderMath();
+        });
+    });
+
+    // Cloud Data Loading
+    async function loadCloudData() {
+        try {
+            setCloudStatus('saving');
+
+            // 1. Load User Profile & Progress
+            if (currentUser) {
+                const userDocRef = doc(db, "users", currentUser.uid);
+                const userSnap = await getDoc(userDocRef);
+                if (userSnap.exists()) {
+                    const cloudUserData = userSnap.data();
+                    state.streak = cloudUserData.streak || 0;
+                    state.lastActiveDate = cloudUserData.lastActiveDate || "";
+                    state.history = cloudUserData.history || {};
+                    state.bookmarks = cloudUserData.bookmarks || [];
+                    state.weeklyActivity = cloudUserData.weeklyActivity || Array(7).fill(false);
+                    state.heatmap = cloudUserData.heatmap || Array(56).fill(0);
+                }
+            }
+
+            // 2. Load Questions from Cloud
+            const qSnap = await getDocs(collection(db, "questions"));
+            const loadedQ = [];
+            qSnap.forEach(d => loadedQ.push(d.data()));
+            if (loadedQ.length > 0) {
+                state.importedQuestions = loadedQ;
+            }
+
+            // 3. Load Rules from Cloud
+            const rSnap = await getDocs(collection(db, "rules"));
+            const loadedR = [];
+            rSnap.forEach(d => loadedR.push(d.data()));
+            if (loadedR.length > 0) {
+                state.importedRules = loadedR;
+            }
+
+            checkDailyStreak();
+            setCloudStatus('saved');
+        } catch (e) {
+            console.error("Error loading cloud data:", e);
+            loadLocalFallbackData();
+            setCloudStatus('offline');
+        }
+    }
+
+    function loadLocalFallbackData() {
+        const saved = localStorage.getItem("mainichi_integ_data");
+        if (saved) {
+            try {
+                state = Object.assign(state, JSON.parse(saved));
+            } catch (e) {
+                console.error("Failed to parse local fallback data:", e);
+            }
+        }
+        checkDailyStreak();
+    }
+
+    async function saveUserData() {
+        setCloudStatus('saving');
+
+        // LocalStorage にも保持（オフライン耐性）
+        localStorage.setItem("mainichi_integ_data", JSON.stringify(state));
+
+        // Firestore に同期保存
+        if (currentUser) {
+            try {
+                const userDocRef = doc(db, "users", currentUser.uid);
+                await setDoc(userDocRef, {
+                    streak: state.streak,
+                    lastActiveDate: state.lastActiveDate,
+                    history: state.history,
+                    bookmarks: state.bookmarks,
+                    weeklyActivity: state.weeklyActivity,
+                    heatmap: state.heatmap,
+                    updatedAt: Date.now()
+                }, { merge: true });
+                setCloudStatus('saved');
+            } catch (err) {
+                console.error("Cloud Save Failed:", err);
+                setCloudStatus('offline');
+            }
+        } else {
+            setCloudStatus('saved');
+        }
+        updateHeaderAndHomeUI();
+    }
+
+    function checkDailyStreak() {
+        const today = new Date().toISOString().split('T')[0];
+        if (!state.lastActiveDate) return;
+        const last = new Date(state.lastActiveDate);
+        const current = new Date(today);
+        const diffDays = Math.floor((current - last) / (1000 * 60 * 60 * 24));
+        if (diffDays > 1) {
+            state.streak = 0;
+        }
+    }
+
+    // Excel (xlsx) Parsing & Cloud Upload Handler
+    function initExcelImportHandler() {
+        const fileInput = document.getElementById('input-excel-file');
+        const statusMsg = document.getElementById('import-status-msg');
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            setCloudStatus('saving');
+            statusMsg.textContent = "クラウドに保存中...";
+            statusMsg.className = "text-[11px] font-semibold text-amber-600";
+
+            const reader = new FileReader();
+            reader.onload = async function(evt) {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+
+                    // Parse Questions Sheet
+                    const qSheetName = workbook.SheetNames[0];
+                    const qSheet = workbook.Sheets[qSheetName];
+                    const qRawData = XLSX.utils.sheet_to_json(qSheet);
+
+                    const parsedQuestions = qRawData.map((row, index) => ({
+                        id: String(row.id || `q_${index + 1}`),
+                        title: String(row.title || `問題 ${index + 1}`),
+                        difficulty: String(row.difficulty || "標準"),
+                        category: String(row.category || "その他"),
+                        tags: row.tags ? String(row.tags).split(',').map(t => t.trim()) : [],
+                        latex: String(row.latex || ""),
+                        answerLatex: String(row.answerLatex || ""),
+                        hint1: String(row.hint1 || ""),
+                        hint2: String(row.hint2 || ""),
+                        explanation: String(row.explanation || "")
+                    }));
+
+                    // Parse Rules Sheet if exists
+                    let parsedRules = [];
+                    if (workbook.SheetNames.length > 1) {
+                        const rSheetName = workbook.SheetNames[1];
+                        const rSheet = workbook.Sheets[rSheetName];
+                        const rRawData = XLSX.utils.sheet_to_json(rSheet);
+
+                        parsedRules = rRawData.map((row, index) => ({
+                            id: String(row.id || `r_${index + 1}`),
+                            title: String(row.title || `定石 ${index + 1}`),
+                            tag: String(row.tag || "基本"),
+                            rule: String(row.rule || ""),
+                            target: String(row.target || ""),
+                            action: String(row.action || ""),
+                            why: String(row.why || ""),
+                            exampleId: String(row.exampleId || "")
+                        }));
+                    }
+
+                    // Save to State
+                    state.importedQuestions = parsedQuestions;
+                    if (parsedRules.length > 0) state.importedRules = parsedRules;
+
+                    // Firestore への一括同期書き込み (Batch Write)
+                    const batch = writeBatch(db);
+                    parsedQuestions.forEach(q => {
+                        batch.set(doc(db, "questions", q.id), q);
+                    });
+                    parsedRules.forEach(r => {
+                        batch.set(doc(db, "rules", r.id), r);
+                    });
+                    await batch.commit();
+
+                    await saveUserData();
+
+                    statusMsg.textContent = `成功: ${parsedQuestions.length} 問をクラウドに同期登録しました！`;
+                    statusMsg.className = "text-[11px] font-bold text-emerald-600";
+                    setCloudStatus('saved');
+
+                    renderHomeView();
+                    renderQuestionsList();
+                    renderRulesList();
+                    renderReviewList();
+                    renderStatsView();
+
+                } catch (err) {
+                    console.error(err);
+                    statusMsg.textContent = "エラー: XLSXファイルの読み込みまたは送信に失敗しました。";
+                    statusMsg.className = "text-[11px] font-bold text-rose-600";
+                    setCloudStatus('offline');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+    }
+
+    function initNavigation() {
+        const navBtns = document.querySelectorAll('.nav-tab-btn');
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetView = btn.getAttribute('data-view');
+                
+                navBtns.forEach(b => {
+                    b.classList.remove('active', 'text-blue-600');
+                    b.classList.add('text-slate-400');
+                });
+                btn.classList.add('active', 'text-blue-600');
+                btn.classList.remove('text-slate-400');
+
+                document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+                
+                const viewEl = document.getElementById(`view-${targetView}`);
+                if (viewEl) viewEl.classList.remove('hidden');
+
+                if (targetView === 'home') renderHomeView();
+                if (targetView === 'questions') renderQuestionsList();
+                if (targetView === 'rules') renderRulesList();
+                if (targetView === 'review') renderReviewList();
+                if (targetView === 'stats') renderStatsView();
+            });
+        });
+
+        document.querySelectorAll('.filter-diff-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-diff-btn').forEach(b => {
+                    b.classList.remove('bg-blue-600', 'text-white', 'active');
+                    b.classList.add('bg-white', 'text-slate-600', 'border', 'border-slate-200');
+                });
+                e.target.classList.add('bg-blue-600', 'text-white', 'active');
+                e.target.classList.remove('bg-white', 'text-slate-600', 'border', 'border-slate-200');
+                renderQuestionsList();
+            });
+        });
+
+        document.getElementById('input-search-questions').addEventListener('input', renderQuestionsList);
+
+        document.getElementById('btn-start-today').addEventListener('click', () => {
+            const list = state.importedQuestions;
+            if (list.length === 0) {
+                alert("問題データがありません。「問題」タブからxlsxファイルをインポートしてください。");
+                return;
+            }
+            const dayIndex = new Date().getDate() % list.length;
+            openExerciseModal(list[dayIndex]);
+        });
+
+        document.getElementById('btn-close-exercise').addEventListener('click', closeExerciseModal);
+        document.getElementById('btn-close-rule-modal').addEventListener('click', () => {
+            document.getElementById('rule-modal').classList.add('hidden');
+        });
+
+        document.getElementById('btn-show-solution').addEventListener('click', () => {
+            document.getElementById('solution-drawer').classList.remove('hidden');
+            document.getElementById('btn-show-solution').classList.add('hidden');
+            renderMath(document.getElementById('solution-drawer'));
+        });
+
+        document.getElementById('btn-toggle-hint1').addEventListener('click', () => {
+            const el = document.getElementById('hint1-content');
+            const arrow = document.getElementById('hint1-arrow');
+            el.classList.toggle('hidden');
+            arrow.classList.toggle('rotate-180');
+            if (!el.classList.contains('hidden')) renderMath(el);
+        });
+
+        document.getElementById('btn-toggle-hint2').addEventListener('click', () => {
+            const el = document.getElementById('hint2-content');
+            const arrow = document.getElementById('hint2-arrow');
+            el.classList.toggle('hidden');
+            arrow.classList.toggle('rotate-180');
+            if (!el.classList.contains('hidden')) renderMath(el);
+        });
+
+        document.querySelectorAll('.btn-rate-result').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const rating = btn.getAttribute('data-rating');
+                evaluateCurrentQuestion(rating);
+            });
+        });
+
+        document.getElementById('btn-toggle-bookmark-ex').addEventListener('click', async () => {
+            if (!currentQuestion) return;
+            const idx = state.bookmarks.indexOf(currentQuestion.id);
+            if (idx > -1) {
+                state.bookmarks.splice(idx, 1);
+            } else {
+                state.bookmarks.push(currentQuestion.id);
+            }
+            await saveUserData();
+            updateBookmarkButtonUI();
+            renderReviewList();
+        });
+
+        // Reset 1: 問題データリセット（クラウドからも消去）
+        document.getElementById('btn-reset-questions').addEventListener('click', async () => {
+            if (confirm("クラウドおよび端末上の問題データ・定石データを全削除しますか？\n※学習記録は保持されます。")) {
+                setCloudStatus('saving');
+                const qSnap = await getDocs(collection(db, "questions"));
+                const batch = writeBatch(db);
+                qSnap.forEach(d => batch.delete(d.ref));
+
+                const rSnap = await getDocs(collection(db, "rules"));
+                rSnap.forEach(d => batch.delete(d.ref));
+
+                await batch.commit();
+
+                state.importedQuestions = [];
+                state.importedRules = [];
+                await saveUserData();
+                
+                renderHomeView();
+                renderQuestionsList();
+                renderRulesList();
+                renderReviewList();
+                renderStatsView();
+                setCloudStatus('saved');
+                alert("問題データを削除しました。");
+            }
+        });
+
+        // Reset 2: 学習記録リセット
+        document.getElementById('btn-reset-history').addEventListener('click', async () => {
+            if (confirm("これまでの学習記録（解答履歴・連続記録・ブックマーク・ヒートマップ）をリセットしますか？")) {
+                state.streak = 0;
+                state.lastActiveDate = "";
+                state.history = {};
+                state.bookmarks = [];
+                state.weeklyActivity = [false, false, false, false, false, false, false];
+                state.heatmap = Array(56).fill(0);
+                await saveUserData();
+                renderHomeView();
+                renderQuestionsList();
+                renderRulesList();
+                renderReviewList();
+                renderStatsView();
+                alert("学習記録をリセットしました。");
+            }
+        });
+
+        document.getElementById('btn-start-review-all').addEventListener('click', () => {
+            const list = state.importedQuestions;
+            const reviewQueue = list.filter(q => {
+                const h = state.history[q.id];
+                return (h && (h.status === 'uncertain' || h.status === 'failed')) || state.bookmarks.includes(q.id);
+            });
+            if (reviewQueue.length > 0) {
+                openExerciseModal(reviewQueue[0]);
+            } else {
+                alert("現在、復習待ちの問題はありません！");
+            }
+        });
+    }
+
+    function renderHomeView() {
+        const now = new Date();
+        const month = now.getMonth() + 1;
+        const date = now.getDate();
+        const days = ["日", "月", "火", "水", "木", "金", "土"];
+        document.getElementById('today-date-text').textContent = `${month}月${date}日(${days[now.getDay()]})`;
+
+        const list = state.importedQuestions;
+        const mathBox = document.getElementById('today-math-container');
+
+        if (list.length > 0) {
+            const todayQ = list[date % list.length];
+            document.getElementById('today-tag-badge').textContent = todayQ.category;
+            mathBox.innerHTML = `$$${todayQ.latex}$$`;
+        } else {
+            document.getElementById('today-tag-badge').textContent = "未インポート";
+            mathBox.innerHTML = "<span class='text-xs text-slate-400'>「問題」タブからxlsxファイルをインポートしてください</span>";
+        }
+
+        updateHeaderAndHomeUI();
+
+        // Heatmap Render
+        const heatmapGrid = document.getElementById('heatmap-grid');
+        heatmapGrid.innerHTML = '';
+        for (let i = 0; i < 56; i++) {
+            const intensity = state.heatmap[i] || 0;
+            const cell = document.createElement('div');
+            let colorClass = 'bg-slate-100';
+            if (intensity === 1) colorClass = 'bg-blue-200';
+            if (intensity === 2) colorClass = 'bg-blue-400';
+            if (intensity >= 3) colorClass = 'bg-blue-600';
+
+            cell.className = `w-3 h-3 rounded-sm ${colorClass} transition-colors`;
+            heatmapGrid.appendChild(cell);
+        }
+
+        renderMath(document.getElementById('view-home'));
+    }
+
+    function updateHeaderAndHomeUI() {
+        document.getElementById('header-streak-count').textContent = state.streak;
+        
+        const totalSolved = Object.keys(state.history).length;
+        document.getElementById('total-solved-count-home').textContent = `累計 ${totalSolved} 問解答`;
+
+        const level = Math.floor(totalSolved / 3) + 1;
+        const xpInCurrent = totalSolved % 3;
+        const needed = 3 - xpInCurrent;
+
+        document.getElementById('header-level-text').textContent = `Lv.${level}`;
+        document.getElementById('level-title-display').textContent = `レベル ${level}`;
+        document.getElementById('level-xp-display').textContent = `次まで あと ${needed} 問`;
+        document.getElementById('level-bar-fill').style.width = `${(xpInCurrent / 3) * 100}%`;
+
+        let activeDaysCount = 0;
+        for (let i = 0; i < 7; i++) {
+            const dot = document.getElementById(`day-dot-${i}`);
+            if (state.weeklyActivity[i]) {
+                activeDaysCount++;
+                dot.className = "w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow-md";
+                dot.innerHTML = `<i class="fa-solid fa-check"></i>`;
+            } else {
+                dot.className = "w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-xs font-bold";
+                dot.innerHTML = `<i class="fa-solid fa-minus"></i>`;
+            }
+        }
+        document.getElementById('weekly-count-text').textContent = `${activeDaysCount} / 7 日達成`;
+    }
+
+    function renderQuestionsList() {
+        const container = document.getElementById('questions-list-container');
+        const searchText = document.getElementById('input-search-questions').value.toLowerCase().trim();
+        const activeDiff = document.querySelector('.filter-diff-btn.active').getAttribute('data-diff');
+
+        const list = state.importedQuestions;
+
+        const filtered = list.filter(q => {
+            const matchDiff = activeDiff === 'all' || q.difficulty === activeDiff;
+            const matchSearch = !searchText || q.title.toLowerCase().includes(searchText) || q.latex.toLowerCase().includes(searchText) || q.category.toLowerCase().includes(searchText);
+            return matchDiff && matchSearch;
+        });
+
+        document.getElementById('question-count-badge').textContent = `該当 ${filtered.length} 問`;
+        container.innerHTML = '';
+
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-12 text-slate-400 space-y-2 bg-white rounded-2xl border border-slate-100 card-shadow">
+                    <i class="fa-solid fa-folder-open text-3xl text-slate-300"></i>
+                    <p class="text-xs">表示できる問題がありません。<br>上のエリアからxlsxファイルをインポートしてください。</p>
+                </div>
+            `;
+            return;
+        }
+
+        filtered.forEach(q => {
+            const userHistory = state.history[q.id];
+            let statusBadge = '';
+            if (userHistory) {
+                if (userHistory.status === 'master') {
+                    statusBadge = `<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200"><i class="fa-solid fa-check"></i> 完璧</span>`;
+                } else if (userHistory.status === 'uncertain') {
+                    statusBadge = `<span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200"><i class="fa-solid fa-triangle-exclamation"></i> あやふや</span>`;
+                } else {
+                    statusBadge = `<span class="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200"><i class="fa-solid fa-xmark"></i> 要復習</span>`;
+                }
+            }
+
+            let diffBadgeClass = 'bg-blue-50 text-blue-600 border-blue-200';
+            if (q.difficulty === '基礎') diffBadgeClass = 'bg-emerald-50 text-emerald-600 border-emerald-200';
+            if (q.difficulty === '応用') diffBadgeClass = 'bg-purple-50 text-purple-600 border-purple-200';
+
+            const card = document.createElement('div');
+            card.className = "bg-white border border-slate-100 hover:border-blue-300 rounded-2xl p-4 transition-all cursor-pointer card-shadow flex items-center justify-between";
+            card.innerHTML = `
+                <div class="space-y-1.5 flex-1 pr-3 overflow-hidden">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-[10px] font-extrabold px-2 py-0.5 rounded border ${diffBadgeClass}">${q.difficulty}</span>
+                        <span class="text-xs text-slate-500 font-bold">${q.category}</span>
+                        ${statusBadge}
+                    </div>
+                    <div class="py-1 text-slate-900 font-serif text-base overflow-x-auto">
+                        $${q.latex}$
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-right text-slate-300 text-sm"></i>
+            `;
+
+            card.addEventListener('click', () => openExerciseModal(q));
+            container.appendChild(card);
+        });
+
+        renderMath(container);
+    }
+
+    function renderRulesList() {
+        const container = document.getElementById('rules-list-container');
+        container.innerHTML = '';
+
+        const rules = state.importedRules;
+
+        if (rules.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-10 text-slate-400 text-xs bg-white rounded-2xl border border-slate-100 card-shadow">
+                    定石データが見つかりません。xlsxファイルに「定石」シートを含めてインポートしてください。
+                </div>
+            `;
+            return;
+        }
+
+        rules.forEach(r => {
+            const card = document.createElement('div');
+            card.className = "bg-white border border-slate-100 rounded-2xl p-4 space-y-2 cursor-pointer card-shadow hover:border-blue-300 transition-all";
+            card.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-extrabold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">${r.tag}</span>
+                    <i class="fa-solid fa-chevron-right text-xs text-slate-300"></i>
+                </div>
+                <h3 class="text-sm font-bold text-slate-800">${r.title}</h3>
+                <div class="text-xs text-blue-700 font-semibold bg-blue-50/60 p-2.5 rounded-xl border border-blue-100">
+                    💡 ${r.rule}
+                </div>
+            `;
+
+            card.addEventListener('click', () => openRuleModal(r));
+            container.appendChild(card);
+        });
+
+        renderMath(container);
+    }
+
+    function openRuleModal(r) {
+        const modal = document.getElementById('rule-modal');
+        const content = document.getElementById('rule-modal-content');
+
+        content.innerHTML = `
+            <div class="space-y-4">
+                <div class="inline-block px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-600 text-xs font-bold">
+                    ${r.tag}
+                </div>
+                <h2 class="text-base font-extrabold text-slate-900">${r.title}</h2>
+                
+                <div class="bg-blue-600 text-white rounded-2xl p-3.5 text-xs font-medium shadow-md">
+                    💡 <strong>【定石】</strong> ${r.rule}
+                </div>
+
+                ${r.target ? `
+                <div class="space-y-1">
+                    <span class="text-[11px] font-bold text-slate-400">対象となる形</span>
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-center text-slate-900 text-base overflow-x-auto">
+                        $$${r.target}$$
+                    </div>
+                </div>` : ''}
+
+                ${r.action ? `
+                <div class="space-y-1">
+                    <span class="text-[11px] font-bold text-slate-400">こうする（具体アクション）</span>
+                    <div class="text-xs text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        ${r.action}
+                    </div>
+                </div>` : ''}
+
+                ${r.why ? `
+                <div class="space-y-1">
+                    <span class="text-[11px] font-bold text-slate-400">なぜ・コツ</span>
+                    <div class="text-xs text-slate-600 leading-relaxed bg-amber-50/50 p-3 rounded-xl border border-amber-100">
+                        ${r.why}
+                    </div>
+                </div>` : ''}
+            </div>
+        `;
+
+        modal.classList.remove('hidden');
+        renderMath(content);
+    }
+
+    function renderReviewList() {
+        const container = document.getElementById('review-list-container');
+        container.innerHTML = '';
+
+        const list = state.importedQuestions;
+        const reviewItems = list.filter(q => {
+            const h = state.history[q.id];
+            const isBookmarked = state.bookmarks.includes(q.id);
+            return (h && (h.status === 'uncertain' || h.status === 'failed')) || isBookmarked;
+        });
+
+        const pendingCount = list.filter(q => {
+            const h = state.history[q.id];
+            return h && (h.status === 'uncertain' || h.status === 'failed');
+        }).length;
+
+        document.getElementById('review-pending-count').textContent = pendingCount;
+        document.getElementById('review-bookmark-count').textContent = state.bookmarks.length;
+
+        if (reviewItems.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-10 text-slate-400 space-y-2 bg-white rounded-2xl border border-slate-100 card-shadow">
+                    <i class="fa-solid fa-circle-check text-3xl text-emerald-500"></i>
+                    <p class="text-xs">復習対象の問題はありません。</p>
+                </div>
+            `;
+            return;
+        }
+
+        reviewItems.forEach(q => {
+            const card = document.createElement('div');
+            card.className = "bg-white border border-slate-100 rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-amber-300 transition-all card-shadow";
+            card.innerHTML = `
+                <div class="space-y-1 overflow-hidden pr-2">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">${q.category}</span>
+                        ${state.bookmarks.includes(q.id) ? '<i class="fa-solid fa-star text-amber-400 text-xs"></i>' : ''}
+                    </div>
+                    <div class="text-sm font-bold text-slate-800 flex items-center space-x-2">
+                        <span>${q.title}</span>
+                        <span class="text-xs font-normal text-slate-600 font-serif overflow-x-auto">$${q.latex}$</span>
+                    </div>
+                </div>
+                <button class="px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-600 font-bold rounded-xl text-xs hover:bg-amber-100 flex-shrink-0">
+                    復習
+                </button>
+            `;
+            card.addEventListener('click', () => openExerciseModal(q));
+            container.appendChild(card);
+        });
+
+        renderMath(container);
+    }
+
+    function renderStatsView() {
+        let master = 0, uncertain = 0, failed = 0;
+        Object.values(state.history).forEach(h => {
+            if (h.status === 'master') master++;
+            if (h.status === 'uncertain') uncertain++;
+            if (h.status === 'failed') failed++;
+        });
+
+        document.getElementById('stat-master-count').textContent = master;
+        document.getElementById('stat-uncertain-count').textContent = uncertain;
+        document.getElementById('stat-failed-count').textContent = failed;
+
+        const list = state.importedQuestions;
+        const basicTotal = list.filter(q => q.difficulty === '基礎').length;
+        const basicSolved = list.filter(q => q.difficulty === '基礎' && state.history[q.id]?.status === 'master').length;
+        
+        const stdTotal = list.filter(q => q.difficulty === '標準').length;
+        const stdSolved = list.filter(q => q.difficulty === '標準' && state.history[q.id]?.status === 'master').length;
+
+        const advTotal = list.filter(q => q.difficulty === '応用').length;
+        const advSolved = list.filter(q => q.difficulty === '応用' && state.history[q.id]?.status === 'master').length;
+
+        document.getElementById('stat-diff-basic-text').textContent = `${basicSolved} / ${basicTotal}`;
+        document.getElementById('stat-diff-basic-bar').style.width = `${(basicSolved / (basicTotal || 1)) * 100}%`;
+
+        document.getElementById('stat-diff-standard-text').textContent = `${stdSolved} / ${stdTotal}`;
+        document.getElementById('stat-diff-standard-bar').style.width = `${(stdSolved / (stdTotal || 1)) * 100}%`;
+
+        document.getElementById('stat-diff-advanced-text').textContent = `${advSolved} / ${advTotal}`;
+        document.getElementById('stat-diff-advanced-bar').style.width = `${(advSolved / (advTotal || 1)) * 100}%`;
+    }
+
+    function openExerciseModal(q) {
+        currentQuestion = q;
+        const modal = document.getElementById('exercise-modal');
+        
+        document.getElementById('ex-diff-badge').textContent = q.difficulty;
+        document.getElementById('ex-category-text').textContent = q.category;
+
+        document.getElementById('ex-math-display').innerHTML = `$$${q.latex}$$`;
+
+        document.getElementById('hint1-content').innerHTML = q.hint1 ? q.hint1 : "ヒントがありません。";
+        document.getElementById('hint2-content').innerHTML = q.hint2 ? q.hint2 : "ヒントがありません。";
+        
+        document.getElementById('hint1-content').classList.add('hidden');
+        document.getElementById('hint2-content').classList.add('hidden');
+
+        document.getElementById('solution-answer-math').innerHTML = `$$${q.answerLatex}$$`;
+        document.getElementById('solution-explanation-text').innerHTML = q.explanation;
+        
+        document.getElementById('solution-drawer').classList.add('hidden');
+        document.getElementById('btn-show-solution').classList.remove('hidden');
+
+        updateBookmarkButtonUI();
+        clearCanvas();
+
+        modal.classList.remove('hidden');
+        renderMath(modal);
+
+        setTimeout(resizeCanvas, 50);
+    }
+
+    function closeExerciseModal() {
+        document.getElementById('exercise-modal').classList.add('hidden');
+        currentQuestion = null;
+    }
+
+    function updateBookmarkButtonUI() {
+        if (!currentQuestion) return;
+        const btn = document.getElementById('btn-toggle-bookmark-ex');
+        if (state.bookmarks.includes(currentQuestion.id)) {
+            btn.className = "text-amber-400 p-1 rounded-lg transition-colors";
+        } else {
+            btn.className = "text-slate-300 hover:text-amber-400 p-1 rounded-lg transition-colors";
+        }
+    }
+
+    async function evaluateCurrentQuestion(rating) {
+        if (!currentQuestion) return;
+        const today = new Date().toISOString().split('T')[0];
+        const dayOfWeekIndex = (new Date().getDay() + 6) % 7;
+        
+        if (state.lastActiveDate !== today) {
+            state.streak += 1;
+            state.lastActiveDate = today;
+            state.weeklyActivity[dayOfWeekIndex] = true;
+        }
+
+        const targetIndex = 49 + dayOfWeekIndex;
+        state.heatmap[targetIndex] = (state.heatmap[targetIndex] || 0) + 1;
+
+        state.history[currentQuestion.id] = {
+            status: rating,
+            timestamp: Date.now()
+        };
+
+        await saveUserData();
+        closeExerciseModal();
+        renderHomeView();
+        renderReviewList();
+        renderQuestionsList();
+        renderStatsView();
+    }
+
+    function initCanvasHandlers() {
+        canvas = document.getElementById('scratchpad-canvas');
+        ctx = canvas.getContext('2d');
+
+        window.addEventListener('resize', resizeCanvas);
+
+        document.querySelectorAll('.tool-color-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                isEraser = false;
+                currentColor = btn.getAttribute('data-color');
+                document.querySelectorAll('.tool-color-btn').forEach(b => {
+                    b.classList.remove('border-blue-600');
+                    b.classList.add('border-transparent');
+                    b.innerHTML = '';
+                });
+                btn.classList.add('border-blue-600');
+                btn.classList.remove('border-transparent');
+                btn.innerHTML = `<i class="fa-solid fa-check"></i>`;
+            });
+        });
+
+        document.getElementById('tool-eraser').addEventListener('click', () => {
+            isEraser = true;
+            document.querySelectorAll('.tool-color-btn').forEach(b => {
+                b.classList.remove('border-blue-600');
+                b.classList.add('border-transparent');
+                b.innerHTML = '';
+            });
+        });
+
+        document.getElementById('tool-clear').addEventListener('click', clearCanvas);
+        document.getElementById('tool-undo').addEventListener('click', undoCanvas);
+
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseleave', stopDrawing);
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', { clientX: touch.clientX, clientY: touch.clientY });
+            canvas.dispatchEvent(mouseEvent);
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', { clientX: touch.clientX, clientY: touch.clientY });
+            canvas.dispatchEvent(mouseEvent);
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', () => {
+            canvas.dispatchEvent(new MouseEvent('mouseup', {}));
+        });
+    }
+
+    function resizeCanvas() {
+        if (!canvas) return;
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+    }
+
+    function startDrawing(e) {
+        isDrawing = true;
+        saveStrokeState();
+        document.getElementById('canvas-placeholder').classList.add('hidden');
+
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    }
+
+    function draw(e) {
+        if (!isDrawing) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        ctx.lineWidth = isEraser ? 18 : 2.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = isEraser ? '#ffffff' : currentColor;
+
+        ctx.lineTo(x, y);
+        ctx.stroke();
+    }
+
+    function stopDrawing() {
+        if (isDrawing) {
+            ctx.closePath();
+            isDrawing = false;
+        }
+    }
+
+    function saveStrokeState() {
+        if (strokeHistory.length >= 10) strokeHistory.shift();
+        strokeHistory.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    }
+
+    function undoCanvas() {
+        if (strokeHistory.length > 0) {
+            const previousState = strokeHistory.pop();
+            ctx.putImageData(previousState, 0, 0);
+        } else {
+            clearCanvas();
+        }
+    }
+
+    function clearCanvas() {
+        if (!ctx || !canvas) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        strokeHistory = [];
+        document.getElementById('canvas-placeholder').classList.remove('hidden');
+    }
+    </script>
+</body>
+</html>
